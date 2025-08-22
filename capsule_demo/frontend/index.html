@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CapsuleRAG Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .section {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            transition: border-color 0.2s ease;
+        }
+
+        .section:hover {
+            border-color: #404040;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .upload-area {
+            border: 2px dashed #2a2a2a;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #404040;
+            background: #0f0f0f;
+        }
+
+        .upload-area.dragover {
+            border-color: #6366f1;
+            background: #0f0f1f;
+        }
+
+        .upload-modes {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .upload-mode-btn {
+            background: #1a1a1a;
+            color: #9ca3af;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-mode-btn.active {
+            background: #6366f1;
+            color: #ffffff;
+            border-color: #6366f1;
+        }
+
+        .upload-mode-btn:hover:not(.active) {
+            background: #2a2a2a;
+            color: #ffffff;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            background: #1a1a1a;
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            background: #6366f1;
+            height: 100%;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .batch-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .batch-result.success {
+            background: #0f2f0f;
+            border: 1px solid #2a4a2a;
+        }
+
+        .batch-result.error {
+            background: #2f0f0f;
+            border: 1px solid #4a2a2a;
+        }
+
+        .batch-result-filename {
+            font-weight: 500;
+        }
+
+        .batch-result-status {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .upload-text {
+            color: #9ca3af;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .upload-hint {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .file-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .button {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .button:hover {
+            background: #f3f4f6;
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button:disabled {
+            background: #374151;
+            color: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+        .result-item {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .result-item:hover {
+            border-color: #2a2a2a;
+            background: #0f0f0f;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .result-meta {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .result-score {
+            color: #6366f1;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .result-snippet {
+            color: #d1d5db;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #374151;
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .stat strong {
+            color: #ffffff;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 24px;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 900px;
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #1f1f1f;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .modal-close {
+            appearance: none;
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            color: #9ca3af;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        .modal-content {
+            display: flex;
+            gap: 24px;
+            height: 100%;
+            max-height: 70vh;
+            padding: 20px;
+        }
+
+        .modal-pane {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .modal-pane.preview {
+            flex: 2;
+        }
+
+        .modal-pane.summary {
+            flex: 1;
+        }
+
+        .pane-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #ffffff;
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 8px;
+        }
+
+        .preview-controls {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .download-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .preview-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .preview-page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-page {
+            max-width: 100%;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .preview-loading {
+            text-align: center;
+            color: #9ca3af;
+            padding: 40px;
+        }
+
+        .preview-error {
+            text-align: center;
+            color: #ef4444;
+            padding: 40px;
+        }
+
+        .bullets ul {
+            padding-left: 18px;
+        }
+
+        .bullets li {
+            margin-bottom: 10px;
+            color: #d1d5db;
+        }
+
+        .fulltext {
+            background: #0a0a0a;
+            border-left: 1px solid #1f1f1f;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        @media (max-width: 900px) {
+            .modal-content {
+                grid-template-columns: 1fr;
+            }
+            .fulltext {
+                border-left: none;
+                border-top: 1px solid #1f1f1f;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CapsuleRAG</h1>
+            <p>Hybrid document search with per-file semantic capsules</p>
+        </div>
+
+<div class="section">
+            <h2 class="section-title">Upload Documents</h2>
+            <div class="upload-modes">
+                <button class="upload-mode-btn active" id="singleModeBtn">Single File</button>
+                <button class="upload-mode-btn" id="folderModeBtn">Folder</button>
+            </div>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-text" id="uploadText">Drop a file here or click to browse</div>
+                <div class="upload-hint" id="uploadHint">Supports text files and PDFs</div>
+                <input type="file" class="file-input" id="fileInput" accept=".txt,.pdf,.md,.markdown,.doc,.docx,.rtf,.html,.htm" />
+                <input type="file" class="file-input" id="folderInput" webkitdirectory multiple style="display: none;" />
+            </div>
+            <div id="uploadStatus"></div>
+            <div id="batchProgress" style="display: none;">
+                <div class="progress-header">
+                    <span id="progressText">Processing files...</span>
+                    <span id="progressCount">0/0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="batchResults"></div>
+            </div>
+</div>
+
+<div class="section">
+            <h2 class="section-title">Search Documents</h2>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Enter your search query..."
+                    disabled
+                />
+                <button class="button" id="searchButton" disabled>
+                    <span id="searchButtonText">Search</span>
+                </button>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.875rem; color: #9ca3af;">
+                    <input type="checkbox" id="rerankEnabled" checked style="margin: 0;">
+                    Enable cross-encoder reranking
+                </label>
+                <label style="font-size: 0.875rem; color: #9ca3af;">
+                    Results: <input type="number" id="topK" value="5" min="1" max="20" style="width: 50px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; padding: 4px 6px; color: #ffffff;">
+                </label>
+            </div>
+            <div id="searchStats" class="stats" style="display: none;"></div>
+            <div id="searchResults"></div>
+        </div>
+        
+        <!-- Modal -->
+        <div id="docModal" class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title" id="modalTitle">Document</div>
+                    <button class="modal-close" id="modalClose">Close</button>
+                </div>
+                <div class="modal-content">
+                    <div class="modal-pane preview">
+                        <div class="pane-title">Document Preview</div>
+                        <div class="preview-controls">
+                            <button id="downloadBtn" class="download-btn">Download Document</button>
+                        </div>
+                        <div id="previewContainer" class="preview-container">Loading...</div>
+                    </div>
+                    <div class="modal-pane summary">
+                        <div class="pane-title">AI Summary</div>
+                        <div id="summaryContainer">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+
+<script>
+        let documentsCount = 0;
+        let currentUploadMode = 'single'; // 'single' or 'folder'
+        
+        // Optional API key for authentication (if needed in production)
+        // Role-based authentication and UI adaptation
+        let USER_ROLE = localStorage.getItem('user_role') || 'user';
+        let API_KEY = localStorage.getItem('capsule-api-key') || (USER_ROLE === 'admin' ? 'demo-admin-key' : 'demo-user-key');
+        
+        function getAuthHeaders() {
+            const headers = {'Content-Type': 'application/json'};
+            if (API_KEY) {
+                headers['X-API-Key'] = API_KEY;
+            }
+            return headers;
+        }
+
+        // UI Adaptation based on user role
+        function adaptUIForRole() {
+            const isAdmin = USER_ROLE === 'admin';
+            
+            // Update role indicator
+            updateRoleIndicator();
+            
+            // Show/hide admin-only features
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = isAdmin ? 'block' : 'none';
+            });
+            
+            // Adapt search suggestions
+            updateSearchPlaceholder();
+        }
+
+        function updateRoleIndicator() {
+            // Find or create role indicator
+            let roleIndicator = document.getElementById('roleIndicator');
+            if (!roleIndicator) {
+                roleIndicator = document.createElement('div');
+                roleIndicator.id = 'roleIndicator';
+                roleIndicator.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    z-index: 1000;
+                    transition: all 0.2s ease;
+                `;
+                roleIndicator.onclick = toggleUserRole;
+                roleIndicator.title = 'Click to switch role (Demo)';
+                document.body.appendChild(roleIndicator);
+            }
+            
+            const isAdmin = USER_ROLE === 'admin';
+            roleIndicator.textContent = isAdmin ? ' Admin' : ' User';
+            roleIndicator.style.background = isAdmin ? '#dc2626' : '#059669';
+            roleIndicator.style.color = '#ffffff';
+        }
+
+        function updateSearchPlaceholder() {
+            const isAdmin = USER_ROLE === 'admin';
+            const suggestions = isAdmin ? [
+                'security monitoring',
+                'capsule health analysis',
+                'relationship networks',
+                'system analytics'
+            ] : [
+                'equipment procedures',
+                'safety protocols',
+                'troubleshooting steps',
+                'maintenance guides'
+            ];
+            
+            const searchInput = document.querySelector('input[type="text"]');
+            if (searchInput) {
+                searchInput.placeholder = `Search documents... (Try: "${suggestions[Math.floor(Math.random() * suggestions.length)]}")`;
+            }
+        }
+
+        function toggleUserRole() {
+            USER_ROLE = USER_ROLE === 'admin' ? 'user' : 'admin';
+            API_KEY = USER_ROLE === 'admin' ? 'demo-admin-key' : 'demo-user-key';
+            localStorage.setItem('user_role', USER_ROLE);
+            localStorage.setItem('capsule-api-key', API_KEY);
+            adaptUIForRole();
+            showNotification(`Switched to ${USER_ROLE} mode`, 'info');
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const uploadText = document.getElementById('uploadText');
+        const uploadHint = document.getElementById('uploadHint');
+        const batchProgress = document.getElementById('batchProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const progressCount = document.getElementById('progressCount');
+        const batchResults = document.getElementById('batchResults');
+
+        // Upload mode switching
+        const singleModeBtn = document.getElementById('singleModeBtn');
+        const folderModeBtn = document.getElementById('folderModeBtn');
+
+        singleModeBtn.addEventListener('click', () => switchUploadMode('single'));
+        folderModeBtn.addEventListener('click', () => switchUploadMode('folder'));
+
+        function switchUploadMode(mode) {
+            currentUploadMode = mode;
+            
+            // Update button states
+            singleModeBtn.classList.toggle('active', mode === 'single');
+            folderModeBtn.classList.toggle('active', mode === 'folder');
+            
+            // Update UI text and input visibility
+            if (mode === 'single') {
+                uploadText.textContent = 'Drop a file here or click to browse';
+                uploadHint.textContent = 'Supports text files and PDFs';
+                fileInput.style.display = 'block';
+                folderInput.style.display = 'none';
+            } else {
+                uploadText.textContent = 'Drop a folder here or click to browse';
+                uploadHint.textContent = 'All text files and PDFs in the folder will be processed';
+                fileInput.style.display = 'none';
+                folderInput.style.display = 'block';
+            }
+            
+            // Hide progress if visible
+            batchProgress.style.display = 'none';
+        }
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            
+            if (files.length > 0) {
+                if (currentUploadMode === 'single') {
+                    handleFileUpload(files[0]);
+                } else {
+                    // In folder mode, treat multiple files as batch
+                    handleBatchUpload(files);
+                }
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        folderInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const files = Array.from(e.target.files);
+                handleBatchUpload(files);
+            }
+        });
+
+        // Click handling for upload area
+        uploadArea.addEventListener('click', () => {
+            if (currentUploadMode === 'single') {
+                fileInput.click();
+            } else {
+                folderInput.click();
+            }
+        });
+
+        async function handleFileUpload(file) {
+            if (!file) return;
+
+            showStatus('Uploading and processing document...', 'info');
+            
+    const formData = new FormData();
+    formData.append('file', file);
+
+            try {
+    const response = await fetch('/ingest', {
+        method: 'POST',
+        body: formData
+    });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    documentsCount++;
+                    showStatus(`Successfully uploaded "${file.name}" (ID: ${result.doc_id}, ${result.num_chunks} chunks)`, 'success');
+                    enableSearch();
+                } else {
+                    showStatus(`Upload failed: ${result.detail || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Upload failed: ${error.message}`, 'error');
+            }
+
+    fileInput.value = '';
+}
+
+        async function handleBatchUpload(files) {
+            if (!files || files.length === 0) return;
+
+            // Filter files to only include supported types
+            const supportedFiles = files.filter(file => {
+                const name = file.name.toLowerCase();
+                return name.endsWith('.txt') || name.endsWith('.pdf') || name.endsWith('.md');
+            });
+
+            if (supportedFiles.length === 0) {
+                showStatus('No supported files found in selection. Only .txt, .pdf, and .md files are supported.', 'error');
+                return;
+            }
+
+            // Show batch progress UI
+            batchProgress.style.display = 'block';
+            uploadStatus.style.display = 'none';
+            batchResults.innerHTML = '';
+            
+            progressText.textContent = 'Processing files...';
+            progressCount.textContent = `0/${supportedFiles.length}`;
+            progressFill.style.width = '0%';
+
+            try {
+                // Use the batch endpoint
+                const formData = new FormData();
+                supportedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                const response = await fetch('/ingest/batch', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Update progress to complete
+                    progressFill.style.width = '100%';
+                    progressText.textContent = 'Upload complete!';
+                    progressCount.textContent = `${result.successful}/${result.total_files}`;
+
+                    // Show results
+                    result.results.forEach(fileResult => {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = `batch-result ${fileResult.status}`;
+                        
+                        if (fileResult.status === 'success') {
+                            const filenameSpan = document.createElement('span');
+                            filenameSpan.className = 'batch-result-filename';
+                            filenameSpan.textContent = fileResult.filename;
+                            
+                            const statusSpan = document.createElement('span');
+                            statusSpan.className = 'batch-result-status';
+                            statusSpan.textContent = ` ${fileResult.num_chunks} chunks`;
+                            
+                            resultDiv.appendChild(filenameSpan);
+                            resultDiv.appendChild(statusSpan);
+                            documentsCount++;
+                        } else {
+                            const filenameSpan = document.createElement('span');
+                            filenameSpan.className = 'batch-result-filename';
+                            filenameSpan.textContent = fileResult.filename;
+                            
+                            const statusSpan = document.createElement('span');
+                            statusSpan.className = 'batch-result-status';
+                            statusSpan.textContent = ` ${fileResult.error || 'Unknown error'}`;
+                            
+                            resultDiv.appendChild(filenameSpan);
+                            resultDiv.appendChild(statusSpan);
+                        }
+                        
+                        batchResults.appendChild(resultDiv);
+                    });
+
+                    if (result.successful > 0) {
+                        enableSearch();
+                        showStatus(`Successfully uploaded ${result.successful} of ${result.total_files} files`, 'success');
+                    } else {
+                        showStatus(`Failed to upload any files`, 'error');
+                    }
+                } else {
+                    throw new Error(result.detail || 'Batch upload failed');
+                }
+            } catch (error) {
+                progressText.textContent = 'Upload failed';
+                showStatus(`Batch upload failed: ${error.message}`, 'error');
+            }
+
+            // Clear inputs
+            fileInput.value = '';
+            folderInput.value = '';
+        }
+
+        // Search handling
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            const searchButtonText = document.getElementById('searchButtonText');
+            const originalText = searchButtonText.textContent;
+            
+            searchButtonText.innerHTML = '<span class="loading"></span> Searching...';
+            searchButton.disabled = true;
+
+            try {
+                const topK = parseInt(document.getElementById('topK').value || '5', 10);
+                const rerankEnabled = document.getElementById('rerankEnabled').checked;
+                
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: topK,
+                        rerank: rerankEnabled,
+                        rerank_top_k: Math.max(topK * 3, 10)
+                    })
+                });
+
+                const result = await response.json();
+                displayResults(result);
+            } catch (error) {
+                showResults({
+                    results: [],
+                    error: error.message,
+                    message: 'Search failed'
+                });
+            }
+
+            searchButtonText.textContent = originalText;
+            searchButton.disabled = false;
+        }
+
+        function displayResults(data) {
+            const resultsContainer = document.getElementById('searchResults');
+            const statsContainer = document.getElementById('searchStats');
+            
+            if (data.error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'status error';
+                errorDiv.textContent = `Search failed: ${data.error}`;
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(errorDiv);
+                statsContainer.style.display = 'none';
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">∅</div>
+                        <div>No results found for "${data.query || 'your query'}"</div>
+                    </div>
+                `;
+                statsContainer.style.display = 'none';
+        return;
+    }
+
+            // Show stats
+            const rerankStatus = data.reranked ? ' (reranked)' : '';
+            statsContainer.innerHTML = `
+                <div class="stat">
+                    <strong>${data.results.length}</strong> results found${rerankStatus}
+                </div>
+                <div class="stat">
+                    Searched <strong>${data.total_documents || 0}</strong> documents
+                </div>
+                <div class="stat">
+                    Query: <strong>"${data.query}"</strong>
+                </div>
+            `;
+            statsContainer.style.display = 'flex';
+
+            // Show results
+            resultsContainer.innerHTML = data.results.map((result) => `
+                <div class="result-item" data-doc-id="${result.doc_id}">
+                    <div class="result-header">
+                        <div class="result-meta">Document ${result.doc_id}</div>
+                        <div class="result-score">${(result.score * 100).toFixed(1)}%</div>
+                    </div>
+                    <div class="result-snippet">${result.snippet}</div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.result-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const docId = el.getAttribute('data-doc-id');
+                    openDocModal(parseInt(docId, 10));
+                });
+            });
+        }
+
+        // Modal logic
+        const docModal = document.getElementById('docModal');
+        const modalClose = document.getElementById('modalClose');
+        const summaryContainer = document.getElementById('summaryContainer');
+        const previewContainer = document.getElementById('previewContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const modalTitle = document.getElementById('modalTitle');
+
+        modalClose.addEventListener('click', () => closeDocModal());
+        docModal.addEventListener('click', (e) => {
+            if (e.target === docModal) closeDocModal();
+        });
+
+        function openDocModal(docId) {
+            modalTitle.textContent = `Document ${docId}`;
+            summaryContainer.innerHTML = '<div class="preview-loading">Loading summary...</div>';
+            previewContainer.innerHTML = '<div class="preview-loading">Loading preview...</div>';
+            docModal.style.display = 'flex';
+            
+            // Set up download button
+            downloadBtn.onclick = () => downloadDocument(docId);
+            
+            fetchDocDetails(docId);
+        }
+
+        function closeDocModal() {
+            docModal.style.display = 'none';
+        }
+
+        async function fetchDocDetails(docId) {
+            try {
+                const authHeaders = API_KEY ? {'X-API-Key': API_KEY} : {};
+                const [summaryRes, previewRes] = await Promise.all([
+                    fetch(`/summarize/${docId}`, {headers: authHeaders}),
+                    fetch(`/preview/${docId}`, {headers: authHeaders})
+                ]);
+                
+                // Handle summary
+                if (summaryRes.ok) {
+                    const summaryJson = await summaryRes.json();
+                    const bullets = summaryJson.bullets || [];
+                    if (bullets.length) {
+                        const ul = document.createElement('ul');
+                        bullets.forEach(bullet => {
+                            const li = document.createElement('li');
+                            li.textContent = bullet;
+                            ul.appendChild(li);
+                        });
+                        summaryContainer.innerHTML = '';
+                        summaryContainer.appendChild(ul);
+                    } else {
+                        summaryContainer.innerHTML = '<div class="empty-state">No summary available</div>';
+                    }
+                } else {
+                    summaryContainer.innerHTML = '<div class="preview-error">Failed to load summary</div>';
+                }
+
+                // Handle preview
+                if (previewRes.ok) {
+                    const previewJson = await previewRes.json();
+                    displayDocumentPreview(previewJson);
+                } else {
+                    previewContainer.innerHTML = '<div class="preview-error">Failed to load preview</div>';
+                }
+            } catch (err) {
+                summaryContainer.innerHTML = '<div class="preview-error">Failed to load summary</div>';
+                previewContainer.innerHTML = '<div class="preview-error">Failed to load preview</div>';
+            }
+        }
+
+        function displayDocumentPreview(previewData) {
+            const { filename, preview_images, page_count } = previewData;
+            
+            modalTitle.textContent = filename;
+            
+            if (!preview_images || preview_images.length === 0) {
+                previewContainer.innerHTML = '<div class="preview-error">No preview available for this document type</div>';
+                return;
+            }
+
+            const previewHtml = preview_images.map((imgBase64, index) => `
+                <div class="preview-page-container">
+                    <div class="page-label">Page ${index + 1} of ${page_count}</div>
+                    <img class="preview-page" src="data:image/png;base64,${imgBase64}" alt="Page ${index + 1}" />
+                </div>
+            `).join('');
+
+            previewContainer.innerHTML = previewHtml;
+        }
+
+        async function downloadDocument(docId) {
+            try {
+                // Use fetch with auth headers to get the file, then create blob download
+                const authHeaders = API_KEY ? {'X-API-Key': API_KEY} : {};
+                const response = await fetch(`/download/${docId}`, {headers: authHeaders});
+                
+                if (!response.ok) {
+                    throw new Error('Download failed');
+                }
+                
+                const blob = await response.blob();
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = `document_${docId}`;
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename=(.+)/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Download failed:', error);
+                showStatus('Download failed', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            uploadStatus.innerHTML = '';
+            uploadStatus.appendChild(statusDiv);
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    uploadStatus.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        function enableSearch() {
+            searchInput.disabled = false;
+            searchButton.disabled = false;
+            searchInput.placeholder = 'Enter your search query...';
+        }
+
+        // Initialize
+        if (documentsCount === 0) {
+            searchInput.placeholder = 'Upload a document first to enable search';
+        }
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            adaptUIForRole();
+            updateSearchPlaceholder();
+        });
+</script>
+</body>
+</html>
