@@ -210,6 +210,6 @@ For issues and questions:
 3. Check the live demo script for usage examples
 4. Open an issue on GitHub
 
----
 
-**Built for enterprise document intelligence**
+
+
