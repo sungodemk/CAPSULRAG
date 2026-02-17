@@ -4,7 +4,7 @@
 
 CapsuleRAG is an advanced document intelligence platform that transforms enterprise document management through intelligent retrieval, security governance, and modular design. The system processes complex documents into searchable "capsules" with comprehensive metadata tracking and access controls.
 
-## 🚀 Key Features
+##  Key Features
 
 - **Hybrid Search Architecture**: Combines BM25 lexical search, semantic embeddings, and cross-encoder reranking
 - **Modular Design**: 7 focused modules for search, security, ingestion, health monitoring, relationships, and enrichment
@@ -13,14 +13,14 @@ CapsuleRAG is an advanced document intelligence platform that transforms enterpr
 - **Advanced Document Processing**: Structure-aware chunking with byte-range citations and entity extraction
 - **Real-time Analytics**: Health monitoring, caching performance, and relationship analysis
 
-## 📋 Prerequisites
+##  Prerequisites
 
 - Python 3.9 or higher
 - pip package manager
 - 4GB+ RAM (for embedding models)
 - Internet connection (for initial model downloads)
 
-## 🛠️ Installation & Setup
+##  Installation & Setup
 
 ### 1. Clone the Repository
 ```bash
@@ -130,7 +130,7 @@ CAPSULRAG/
 - `GET /network` - Entity relationship network
 - `GET /enrichment` - Content enrichment overview
 
-## 🧪 Testing
+##  Testing
 
 ### Quick Test with Sample Documents
 1. Start the server: `python main.py`
@@ -148,7 +148,7 @@ python test_mcp_client.py
 python test_mcp_full.py
 ```
 
-## 🔒 Security Features
+##  Security Features
 
 - **Adversarial Query Detection**: Prevents malicious input patterns
 - **Rate Limiting**: Protects against abuse
@@ -157,7 +157,7 @@ python test_mcp_full.py
 - **Content Sanitization**: Safe document processing
 - **Security Headers**: OWASP-compliant HTTP headers
 
-## 📊 Performance Optimization
+##  Performance Optimization
 
 - **Intelligent Caching**: Query result caching with TTL
 - **Model Pre-loading**: Background model initialization
@@ -165,7 +165,7 @@ python test_mcp_full.py
 - **Health Monitoring**: Automatic performance tracking
 - **Deduplication**: Prevents redundant document storage
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -174,7 +174,7 @@ python test_mcp_full.py
 5. Push and create a pull request
 
 
-## 🆘 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
